@@ -118,18 +118,3 @@ their own Firebase project safely.
 | `SolaceTests/` | Unit tests for app and care-plan behavior |
 | `firestore.rules` | Firestore access rules for paired devices |
 | `FIREBASE_SETUP.md` | Firebase configuration and device-pairing notes |
-
-## Security notes
-
-- `GoogleService-Info.plist` files are intentionally ignored by Git. Download
-  fresh copies from Firebase Console when setting up a clone.
-- Azure Speech credentials are read from the local Xcode environment and are
-  not embedded in Swift source.
-- Review `git diff --cached` and run a secret scan before the first public push.
-- Any credential that was previously embedded in a local build should be
-  revoked and regenerated before publishing the repository.
-
-## License
-
-No license has been selected yet. Add one before accepting outside
-contributions or redistributing the project.
