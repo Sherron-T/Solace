@@ -1,0 +1,29 @@
+# macOS and Xcode
+.DS_Store
+.Rhistory
+build/
+DerivedData/
+xcuserdata/
+*.xcuserstate
+*.xcscmblueprint
+
+# Firebase and local credentials
+**/GoogleService-Info.plist
+*.env
+*.env.*
+!.env.example
+**/Secrets/
+
+# Local workspace state
+.??*/
+Website/
+
+# Private design and development notes
+*-brief.md
+CHANGELOG_STROKEAPP.md
+TODO.md
+Slide Deck/scratchpad.md
+Slide Deck/*.bak
+
+# Presentation sources and recordings are kept local for now.
+Slide Deck/
