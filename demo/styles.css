@@ -108,3 +108,59 @@ textarea { width:100%; resize:vertical; border:1px solid var(--line); background
 
 /* Interaction and finish polish */
 button{transition:transform .14s ease,filter .14s ease,background-color .18s ease,border-color .18s ease}button:hover{filter:brightness(.985)}button:active{transform:scale(.975)}button:focus-visible{outline:3px solid #8ab889;outline-offset:2px}.phone-screen{background:radial-gradient(circle at 50% 35%,#f7fbf2 0,#eef6e9 45%,#e2efdc 100%)}.care-phone .phone-screen{background:linear-gradient(180deg,#f5f6ef,#e4eee0)}.phone{border-width:8px;padding:7px;box-shadow:0 30px 80px rgba(20,51,31,.3),0 0 0 1px #748078}.phone-content{scroll-behavior:smooth}.native-header{position:relative;z-index:2}.native-moods .mood-row.chosen{box-shadow:0 7px 16px color-mix(in srgb,var(--mood) 20%,transparent)}.wide-primary:active,.care-primary:active,.wide-danger:active{box-shadow:0 3px 8px #31573a22}.voice-pill.heard{animation:heardPulse .45s ease}.dynamic-island:after{content:"";position:absolute;right:9px;top:9px;width:7px;height:7px;border-radius:50%;background:#18241d;box-shadow:inset 0 0 0 2px #26352c}.activity-card:hover,.ios-card:hover,.energy-row:hover,.mood-row:hover,.after-list button:hover{border-color:#adc5a7}.care-primary:disabled{opacity:.55}.care-content textarea:focus{outline:2px solid #88ab83;outline-offset:1px}.share-line .toggle{margin:0}.share-line .toggle i{margin:0}.toast{z-index:50}@keyframes heardPulse{0%{transform:scale(.98)}60%{transform:scale(1.015)}100%{transform:scale(1)}}
+
+/* Accessible motion system */
+.phone-content.motion-initial{animation:screenFade .5s cubic-bezier(.22,1,.36,1) both}
+.phone-content.motion-forward{animation:screenForward .38s cubic-bezier(.22,1,.36,1) both}
+.phone-content.motion-back{animation:screenBack .34s cubic-bezier(.22,1,.36,1) both}
+.phone-content.motion-switch{animation:screenSwitch .48s cubic-bezier(.22,1,.36,1) both}
+.phone-content.motion-step{animation:screenStep .34s cubic-bezier(.22,1,.36,1) both}
+.phone-content.motion-success{animation:screenSuccess .48s cubic-bezier(.16,1,.3,1) both}
+.phone-content.motion-reveal{animation:screenReveal .4s cubic-bezier(.22,1,.36,1) both}
+.motion-item{opacity:0;animation:itemRise .42s cubic-bezier(.22,1,.36,1) forwards;animation-delay:calc(70ms + var(--stagger,0ms))}
+#app[data-motion="initial"] .phone{animation:phoneSettle .7s cubic-bezier(.16,1,.3,1) both}
+.context-enter>*{opacity:0;animation:contextRise .52s cubic-bezier(.22,1,.36,1) forwards}
+.context-enter>*:nth-child(2){animation-delay:70ms}.context-enter>*:nth-child(3){animation-delay:120ms}.context-enter>*:nth-child(4){animation-delay:170ms}.context-enter>*:nth-child(5){animation-delay:220ms}
+.phone-screen.motion-success:after{content:"";position:absolute;inset:0;z-index:20;pointer-events:none;background:radial-gradient(circle at 50% 43%,rgba(123,177,111,.34),transparent 52%);animation:successWash .9s ease-out both}
+.checkin-orb{position:relative;isolation:isolate}
+.checkin-orb:after{content:"";position:absolute;inset:-9px;border:2px solid rgba(75,121,80,.28);border-radius:50%;z-index:-1;animation:orbHalo 3.2s ease-in-out infinite}
+.live-dot{animation:livePulse 2.4s ease-in-out infinite}
+.ios-nav button.selected i{animation:navPop .38s cubic-bezier(.34,1.56,.64,1)}
+.selected-check,.option-row.chosen>i{animation:checkPop .34s cubic-bezier(.34,1.56,.64,1)}
+.toggle i{transition:transform .3s cubic-bezier(.34,1.56,.64,1)}
+.toggle.on i{transform:translateX(18px)}
+.activity-card,.ios-card,.energy-row,.mood-row,.after-list button,.care-card{transition:transform .2s cubic-bezier(.22,1,.36,1),box-shadow .2s ease,border-color .18s ease,background-color .18s ease}
+.activity-card:hover,.ios-card:hover,.energy-row:hover,.mood-row:hover,.after-list button:hover{transform:translateY(-2px);box-shadow:0 10px 22px rgba(48,82,55,.1)}
+.breathing span{animation:breathLabel 4s ease-in-out infinite}
+.phone-content[class*="motion-"] .trend-bars span{transform-origin:bottom;animation:barGrow .65s cubic-bezier(.22,1,.36,1) both}
+.trend-bars>div:nth-child(2) span{animation-delay:55ms!important}.trend-bars>div:nth-child(3) span{animation-delay:110ms!important}.trend-bars>div:nth-child(4) span{animation-delay:165ms!important}.trend-bars>div:nth-child(5) span{animation-delay:220ms!important}.trend-bars>div:nth-child(6) span{animation-delay:275ms!important}.trend-bars>div:nth-child(7) span{animation-delay:330ms!important}
+.phone-content[class*="motion-"] .goal-bar i{animation:goalGrow .8s .18s cubic-bezier(.22,1,.36,1) both}
+.phone-content.motion-success .streak-ring,.phone-content.motion-success .complete-card>span,.phone-content.motion-success .confirm-face{animation:completionPop .62s cubic-bezier(.34,1.56,.64,1) both}
+.github-link i:last-child,.source-button i{transition:transform .2s ease}.github-link:hover i:last-child,.source-button:hover i{transform:translate(2px,-2px)}
+.toast{will-change:transform,opacity;transition:opacity .25s ease,transform .35s cubic-bezier(.34,1.56,.64,1)}
+
+@keyframes screenFade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+@keyframes screenForward{from{opacity:0;transform:translateX(22px)}to{opacity:1;transform:none}}
+@keyframes screenBack{from{opacity:0;transform:translateX(-18px)}to{opacity:1;transform:none}}
+@keyframes screenSwitch{from{opacity:0;transform:scale(.975)}to{opacity:1;transform:none}}
+@keyframes screenStep{from{opacity:0;transform:translateX(14px)}to{opacity:1;transform:none}}
+@keyframes screenSuccess{0%{opacity:0;transform:scale(.97)}65%{opacity:1;transform:scale(1.008)}100%{transform:none}}
+@keyframes screenReveal{from{opacity:.35;transform:translateY(8px)}to{opacity:1;transform:none}}
+@keyframes itemRise{from{opacity:0;transform:translateY(12px) scale(.985)}to{opacity:1;transform:none}}
+@keyframes phoneSettle{from{opacity:0;transform:translateY(22px) scale(.975);box-shadow:0 12px 36px rgba(20,51,31,.14)}to{opacity:1;transform:none}}
+@keyframes contextRise{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+@keyframes successWash{0%{opacity:0}25%{opacity:1}100%{opacity:0}}
+@keyframes orbHalo{0%,100%{opacity:.22;transform:scale(.96)}50%{opacity:.72;transform:scale(1.035)}}
+@keyframes livePulse{0%,100%{opacity:.7;box-shadow:0 0 0 0 rgba(90,175,101,0)}50%{opacity:1;box-shadow:0 0 0 5px rgba(90,175,101,.14)}}
+@keyframes navPop{from{transform:scale(.72)}to{transform:scale(1)}}
+@keyframes checkPop{0%{opacity:0;transform:scale(.45) rotate(-12deg)}100%{opacity:1;transform:none}}
+@keyframes breathLabel{0%,100%{opacity:.72}50%{opacity:1}}
+@keyframes barGrow{from{transform:scaleY(0);opacity:.4}to{transform:scaleY(1);opacity:1}}
+@keyframes goalGrow{from{width:0}to{width:80%}}
+@keyframes completionPop{0%{opacity:0;transform:scale(.65) rotate(-5deg)}70%{opacity:1;transform:scale(1.05)}100%{transform:none}}
+
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.001ms!important;animation-delay:0ms!important;animation-iteration-count:1!important;scroll-behavior:auto!important;transition-duration:.001ms!important}
+  .motion-item,.context-enter>*{opacity:1!important;transform:none!important}
+  .checkin-orb:after{display:none}
+}

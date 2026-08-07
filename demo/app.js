@@ -1,5 +1,9 @@
 const app = document.querySelector('#app');
 const toast = document.querySelector('#toast');
+const prefersReducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
+let firstRender = true;
+let breathingTimer;
+let toastTimer;
 
 const defaults = {
   view: location.hash.slice(1) || 'home', mood: null, energy: null,
@@ -27,8 +31,21 @@ const activities = {
 };
 
 function save(){ localStorage.setItem('solace-demo-v3', JSON.stringify(state)); }
-function notify(message){ toast.textContent=message; toast.classList.add('show'); setTimeout(()=>toast.classList.remove('show'),2400); }
-function go(view){ state.view=view; location.hash=view; save(); render(); document.querySelector('.phone-content')?.scrollTo(0,0); }
+function notify(message){
+  clearTimeout(toastTimer);
+  toast.textContent=message;
+  toast.classList.remove('show');
+  requestAnimationFrame(()=>toast.classList.add('show'));
+  toastTimer=setTimeout(()=>toast.classList.remove('show'),2400);
+}
+function go(view,motion='forward'){
+  state.view=view;
+  if(location.hash!==`#${view}`) history.pushState({view},'',`#${view}`);
+  save();
+  render(motion);
+  const content=document.querySelector('.phone-content');
+  if(content) content.scrollTop=0;
+}
 function timeNow(){ return new Date().toLocaleTimeString([], {hour:'numeric',minute:'2-digit'}); }
 function icon(name, extra=''){ return `<i class="fa-solid ${name} ${extra}" aria-hidden="true"></i>`; }
 function downloadPDF(){
@@ -145,17 +162,53 @@ function careView(){
 }
 function careActivity(x,i,draft){ return `<div class="draft-card"><span>${icon(i===2?'fa-dumbbell':'fa-person-walking')}</span><div><strong>${x[0]} ${i?'<em>PT</em>':''}</strong><p>${x[1]}</p>${draft?'<small>Source: PT Daily Note · Diagnosis: CVA</small>':''}</div></div>`; }
 
-function render(){
+function render(motion='refresh'){
+  clearInterval(breathingTimer);
   const views={home,mood:moodView,energy:energyView,confirm:confirmView,activities:activityList,doing:doingView,after:afterView,done:doneView,safety:safetyView,settings:settingsView,trend:trendView,ssi:ssiView,care:careView};
+  const activeMotion=firstRender?'initial':motion;
+  app.dataset.motion=activeMotion;
   app.innerHTML=(views[state.view]||home)(); bind();
+  prepareMotion(activeMotion);
+  firstRender=false;
+}
+function prepareMotion(motion){
+  const content=app.querySelector('.phone-content');
+  const screen=app.querySelector('.phone-screen');
+  if(content&&motion!=='refresh') content.classList.add(`motion-${motion}`);
+  if(screen&&motion==='success') screen.classList.add('motion-success');
+  if(motion==='initial'||motion==='switch') app.querySelector('.demo-context')?.classList.add('context-enter');
+
+  if(motion!=='refresh'){
+    const groupSelector=state.view==='care'
+      ? '.care-content'
+      : '.home-cards, .native-moods, .energy-list, .activity-list, .after-list, .setting-list, .option-list';
+    app.querySelectorAll(groupSelector).forEach(group=>{
+      Array.from(group.children).slice(0,10).forEach((item,index)=>{
+        item.classList.add('motion-item');
+        item.style.setProperty('--stagger',`${index*42}ms`);
+      });
+    });
+  }
+
+  const breathingLabel=app.querySelector('.breathing span');
+  if(!breathingLabel) return;
+  if(prefersReducedMotion.matches){ breathingLabel.textContent='Breathe slowly'; return; }
+  let breathingIn=true;
+  breathingTimer=setInterval(()=>{
+    breathingIn=!breathingIn;
+    breathingLabel.textContent=breathingIn?'Breathe in':'Breathe out';
+  },4000);
 }
 function bind(){
-  document.querySelectorAll('[data-go]').forEach(b=>b.onclick=()=>go(b.dataset.go));
-  document.querySelectorAll('[data-switch]').forEach(b=>b.onclick=()=>go(b.dataset.switch));
+  document.querySelectorAll('[data-go]').forEach(b=>b.onclick=()=>{
+    const movingBack=b.classList.contains('back-button')||b.classList.contains('safe-back')||(b.dataset.go==='home'&&state.view!=='home');
+    go(b.dataset.go,movingBack?'back':'forward');
+  });
+  document.querySelectorAll('[data-switch]').forEach(b=>b.onclick=()=>go(b.dataset.switch,'switch'));
   document.querySelectorAll('[data-mood]').forEach(b=>b.onclick=()=>{state.mood=+b.dataset.mood;state.voiceHeard=false;save();render();});
   document.querySelectorAll('[data-energy]').forEach(b=>b.onclick=()=>{state.energy=+b.dataset.energy;save();go('confirm');});
   document.querySelectorAll('[data-activity]').forEach(b=>b.onclick=()=>{state.activity=b.dataset.activity;save();go('doing');});
-  document.querySelectorAll('[data-after]').forEach(b=>b.onclick=()=>{state.after=b.dataset.after;save();go('done');});
+  document.querySelectorAll('[data-after]').forEach(b=>b.onclick=()=>{state.after=b.dataset.after;save();go('done','success');});
   document.querySelectorAll('[data-setting]').forEach(b=>b.onclick=()=>{const key=b.dataset.setting;state[key]=!state[key];save();render();});
   document.querySelectorAll('[data-ssi-option]').forEach(b=>b.onclick=()=>{state.ssiChoices[b.dataset.ssiKey]=+b.dataset.ssiOption;save();render();});
   document.querySelectorAll('[data-read]').forEach(b=>b.onclick=()=>notify('Reading this screen aloud with the configured natural voice.'));
@@ -172,14 +225,15 @@ function action(type){
   if(type==='saveLater'){ state.planned=state.activity;save();notify('Saved for later today.');return go('home'); }
   if(type==='startSSI'){ state.ssiStage=0;save();return go('ssi'); }
   if(type==='toggleShare'){ state.sharePlan=!state.sharePlan;save();return render(); }
-  if(type==='nextSSI'){ if(state.ssiStage<6){state.ssiStage++;save();return render();}state.ssiComplete=true;state.ssiStage=0;save();notify('Your plan is saved and shared with CareBridge.');return go('home'); }
-  if(type==='draft'){ state.drafting=true;save();render();setTimeout(()=>{state.drafting=false;state.drafted=true;save();render();notify('Four patient steps are ready for review.');},700);return; }
-  if(type==='approve'){ state.approved=true;state.drafted=false;save();notify('Approved activities are now active in Solace.');return render(); }
+  if(type==='nextSSI'){ if(state.ssiStage<6){state.ssiStage++;save();return render('step');}state.ssiComplete=true;state.ssiStage=0;save();notify('Your plan is saved and shared with CareBridge.');return go('home','success'); }
+  if(type==='draft'){ state.drafting=true;save();render();setTimeout(()=>{state.drafting=false;state.drafted=true;save();render('reveal');notify('Four patient steps are ready for review.');},700);return; }
+  if(type==='approve'){ state.approved=true;state.drafted=false;save();notify('Approved activities are now active in Solace.');return render('success'); }
   if(type==='clearPlan'){ state.approved=false;save();return render(); }
   if(type==='export'){ downloadPDF();return notify('Clinician summary PDF downloaded.'); }
   if(type==='familyUpdate') return notify('A warm, shareable family update is ready.');
   if(type==='call988') return notify('On iPhone, this opens a call to 988.');
   if(type==='messageCare') return notify('On iPhone, this opens the care-team message option.');
 }
-addEventListener('hashchange',()=>{state.view=location.hash.slice(1)||'home';render();});
-render();
+addEventListener('popstate',()=>{state.view=location.hash.slice(1)||'home';save();render('back');});
+document.querySelector('.brand')?.addEventListener('click',event=>{event.preventDefault();go('home','back');});
+render('initial');
