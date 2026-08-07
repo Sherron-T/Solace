@@ -16,6 +16,9 @@ xcuserdata/
 
 # Local workspace state
 .??*/
+!.github/
+!.github/workflows/
+!.github/workflows/*.yml
 Website/
 
 # Private design and development notes

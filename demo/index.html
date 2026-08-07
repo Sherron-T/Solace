@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#193d29" />
+    <meta name="description" content="Solace interactive browser demo — accessible post-stroke support for survivors and care partners." />
+    <title>Solace | Interactive Demo</title>
+    <link rel="stylesheet" href="vendor/fontawesome/css/fontawesome.min.css" />
+    <link rel="stylesheet" href="vendor/fontawesome/css/solid.min.css" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="neglect-anchor" aria-hidden="true"></div>
+    <header class="site-header">
+      <a class="brand" href="#home" aria-label="Solace home"><span class="brand-mark">S</span><span>Solace</span></a>
+      <div class="demo-badge"><span class="live-dot"></span> Interactive browser demo</div>
+      <a class="github-link" href="https://github.com/Sherron-T/Solace#readme" target="_blank" rel="noopener noreferrer"><i class="fa-solid fa-code-branch" aria-hidden="true"></i> View code &amp; README <i class="fa-solid fa-arrow-up-right-from-square" aria-hidden="true"></i></a>
+    </header>
+
+    <main id="app" tabindex="-1"></main>
+
+    <footer class="site-footer">
+      <span>Built solo for post-stroke recovery support.</span>
+      <span>Demo data stays in this browser.</span>
+    </footer>
+    <div id="toast" class="toast" role="status" aria-live="polite"></div>
+    <script src="app.js"></script>
+  </body>
+</html>

@@ -43,6 +43,15 @@ Built in SwiftUI as two coordinated apps:
 - **Connected when available:** Firebase sync connects the two apps across
   devices, while a local cache keeps the core workflow available offline.
 
+## Browser demo
+
+For a no-install product tour, open the
+**[live Solace browser demo](https://sherron-t.github.io/Solace/)**.
+It lets judges try the survivor check-in, One Small Plan, accessibility
+controls, safety pathway, and CareBridge note-to-steps flow from any modern
+browser. The demo uses local browser state; Firebase sync remains part of the
+native iOS implementation.
+
 ## How the apps connect
 
 ```text
