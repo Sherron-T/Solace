@@ -69,7 +69,7 @@ function context(care=false){
   return `<div class="demo-context"><span class="eyebrow">${care?'CAREBRIDGE APP':'SOLACE APP'}</span>
     <h1>${care?'Care partners see what matters, without taking over.':'A web demo of the full Solace iOS experience.'}</h1>
     <p>${care?'Review progress, receive a shared self-guided plan, and turn clinical notes into patient-ready activities.':'This browser version follows the native SwiftUI app’s core workflow and accessibility patterns.'}</p>
-    <div class="context-actions"><button class="primary" data-switch="${care?'home':'care'}">Switch to ${care?'Solace':'CareBridge'}</button><button class="secondary" data-reset>Reset demo</button><a class="secondary source-button" href="https://github.com/Sherron-T/Solace#readme" target="_blank" rel="noopener noreferrer">${icon('fa-code-branch')} View Project README ${icon('fa-arrow-up-right-from-square')}</a></div>
+    <div class="context-actions"><button class="primary" data-switch="${care?'home':'care'}">Switch to ${care?'Solace':'CareBridge'}</button><button class="secondary" data-reset>Reset demo</button><a class="secondary source-button" href="https://github.com/Sherron-T/Solace#readme" target="_blank" rel="noopener noreferrer">${icon('fa-code-branch')} View code &amp; README ${icon('fa-arrow-up-right-from-square')}</a></div>
     <div class="context-note"><strong>Try the full flow</strong><span>${care?'Draft the sample note, approve the activities, then switch to Solace and open Activities.':'Check in, choose an energy level, complete an activity, and answer the after-check. The One Small Plan and accessibility settings are also interactive.'}</span></div></div>`;
 }
 function frame(content, active='home', care=false){
