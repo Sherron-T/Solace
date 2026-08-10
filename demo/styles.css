@@ -167,21 +167,23 @@ button{transition:transform .14s ease,filter .14s ease,background-color .18s eas
 
 /* Make the project link a clear handoff action */
 .context-actions .source-button{
-  min-height:52px;
-  padding:15px 20px;
-  border:1px solid #315f3b;
-  background:var(--forest);
-  color:#fff;
-  border-radius:15px;
-  box-shadow:0 10px 22px rgba(25,61,41,.2);
-  font-size:14px;
+  width:min(100%,330px);
+  min-height:64px;
+  padding:18px 24px;
+  border:2px solid #7ea681;
+  background:#f3f8ed;
+  color:var(--forest);
+  border-radius:17px;
+  box-shadow:0 8px 18px rgba(58,96,60,.12),inset 0 -3px 0 #dcebd6;
+  font-size:15px;
   letter-spacing:.01em;
 }
 .context-actions .source-button:hover{
-  background:#27623c;
-  color:#fff;
+  background:#e6f1df;
+  color:var(--forest);
+  border-color:#4d7954;
   transform:translateY(-2px);
-  box-shadow:0 14px 26px rgba(25,61,41,.25);
+  box-shadow:0 12px 24px rgba(58,96,60,.18),inset 0 -3px 0 #cfe2c9;
 }
 .context-actions .source-button:focus-visible{outline:3px solid #8ab889;outline-offset:3px}
 .context-actions .source-button i:first-child{font-size:14px}
