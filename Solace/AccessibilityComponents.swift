@@ -39,6 +39,64 @@ struct SettingsGearButton: View {
     }
 }
 
+// MARK: - App-wide sync warning
+
+/// Keeps offline and failed-sync states visible during the recovery flow, not
+/// only inside Settings. Local work remains usable; this is a calm status cue
+/// with an explicit retry action.
+struct FirebaseStatusBanner: View {
+    @ObservedObject private var firebase = FirebaseSync.shared
+    @State private var isRetrying = false
+
+    private var shouldShow: Bool {
+        switch firebase.state {
+        case .offline, .failed: return true
+        default: return false
+        }
+    }
+
+    var body: some View {
+        if shouldShow {
+            HStack(spacing: 10) {
+                Image(systemName: firebase.state == .offline ? "icloud.slash" : "exclamationmark.icloud")
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundStyle(firebase.state == .offline ? Token.warmBody : Token.urgent)
+                VStack(alignment: .leading, spacing: 1) {
+                    Text(firebase.statusTitle)
+                        .font(.ui(13, .semibold))
+                        .foregroundStyle(Token.heading2)
+                    Text(firebase.hasPendingChanges ? "Saved on this device; will sync automatically." : "Your local recovery tools still work.")
+                        .font(.ui(11.5))
+                        .foregroundStyle(Token.muted)
+                }
+                Spacer(minLength: 4)
+                Button {
+                    isRetrying = true
+                    Task {
+                        await firebase.retryConnection()
+                        await MainActor.run { isRetrying = false }
+                    }
+                } label: {
+                    if isRetrying { ProgressView().tint(Token.primary) }
+                    else { Text("Retry").font(.ui(12, .semibold)) }
+                }
+                .disabled(isRetrying)
+                .accessibilityLabel("Retry CareBridge connection")
+            }
+            .padding(.horizontal, 14)
+            .padding(.vertical, 10)
+            .background(Token.warmAlertCard, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .strokeBorder(Token.borderWarm, lineWidth: 1)
+            )
+            .padding(.horizontal, 18)
+            .padding(.top, 8)
+            .transition(.move(edge: .top).combined(with: .opacity))
+        }
+    }
+}
+
 // MARK: - Accessibility profile summary
 
 /// A plain-language snapshot of the accommodations currently active for the

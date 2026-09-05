@@ -73,8 +73,11 @@ struct RootView: View {
             if showsVoiceNavigationStatus {
                 HandsFreeNavigationIndicator()
                     .padding(.horizontal, 22)
-                    .padding(.bottom, showsTabBar ? 78 : 12)
+                .padding(.bottom, showsTabBar ? 78 : 12)
             }
+        }
+        .overlay(alignment: .top) {
+            FirebaseStatusBanner()
         }
         .sheet(isPresented: $model.showSettings) {
             SettingsView()

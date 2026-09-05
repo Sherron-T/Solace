@@ -2,10 +2,13 @@ import SwiftUI
 
 struct DoingView: View {
     @EnvironmentObject private var model: AppModel
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var pauseRemaining = 0
+    @State private var pauseTask: Task<Void, Never>?
 
     var body: some View {
         let activity = model.selectedActivity ?? model.availableActivities[0]
-        let spoken = "\(activity.title). \(activity.instruction) When you’re done, tap the big I did it button at the bottom. No rush, it’ll be here later."
+        let spoken = "\(activity.title). \(activity.instruction) When you’re done, tap the big I did it button at the bottom. If you need a pause, take a 30-second rest. No rush, it’ll be here later."
 
         VStack(spacing: 0) {
             ScreenHeader(speak: spoken) { model.goActivities() }
@@ -62,6 +65,8 @@ struct DoingView: View {
                     .padding(.vertical, 9)
                     .background(Token.accentTint, in: Capsule())
                 }
+
+                pacingControl
             }
 
             Spacer()
@@ -109,6 +114,73 @@ struct DoingView: View {
         .screenEntrance()
         .autoRead(spoken)
         .handsFreeCapture(captureConfiguration(for: activity))
+        .onDisappear {
+            pauseTask?.cancel()
+            pauseTask = nil
+        }
+    }
+
+    private var pacingControl: some View {
+        VStack(spacing: 8) {
+            if pauseRemaining > 0 {
+                HStack(spacing: 9) {
+                    Image(systemName: "pause.circle.fill")
+                        .font(.system(size: 20))
+                        .foregroundStyle(Token.sage)
+                    VStack(alignment: .leading, spacing: 1) {
+                        Text("Take your time")
+                            .font(.ui(15, .semibold))
+                            .foregroundStyle(Token.heading2)
+                        Text("Resting for \(pauseRemaining) seconds")
+                            .font(.ui(13))
+                            .foregroundStyle(Token.muted2)
+                    }
+                    Spacer()
+                    Button("End pause") { endPause() }
+                        .font(.ui(12.5, .semibold))
+                        .foregroundStyle(Token.primary)
+                }
+                .padding(.horizontal, 15)
+                .padding(.vertical, 12)
+                .background(Token.sageCard, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+                .accessibilityElement(children: .contain)
+                .accessibilityValue("\(pauseRemaining) seconds remaining")
+            } else {
+                Button { startPause() } label: {
+                    Label("Take a 30-second rest", systemImage: "pause.circle")
+                        .font(.ui(14.5, .semibold))
+                        .foregroundStyle(Token.body)
+                        .frame(maxWidth: .infinity, minHeight: 44)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                                .strokeBorder(Token.borderOutline, lineWidth: 1)
+                        )
+                }
+                .buttonStyle(PressableStyle())
+                .accessibilityHint("Pauses the activity while you rest. You can end the pause early.")
+            }
+        }
+    }
+
+    private func startPause() {
+        pauseTask?.cancel()
+        pauseRemaining = 30
+        Haptics.soft()
+        pauseTask = Task { @MainActor in
+            while pauseRemaining > 0 && !Task.isCancelled {
+                try? await Task.sleep(for: .seconds(1))
+                guard !Task.isCancelled else { return }
+                pauseRemaining -= 1
+            }
+            if pauseRemaining == 0 { Haptics.soft() }
+        }
+    }
+
+    private func endPause() {
+        pauseTask?.cancel()
+        pauseTask = nil
+        pauseRemaining = 0
+        Haptics.light()
     }
 
     /// The mic stays open while the activity happens, but only short, explicit

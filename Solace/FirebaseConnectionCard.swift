@@ -35,6 +35,12 @@ struct FirebaseConnectionCard: View {
                     .foregroundStyle(Token.muted)
             }
 
+            if firebase.hasPendingChanges {
+                Label("Changes waiting to sync", systemImage: "arrow.triangle.2.circlepath")
+                    .font(.ui(12.5, .medium))
+                    .foregroundStyle(Token.warmBody)
+            }
+
             if let code = firebase.pairCode {
                 VStack(alignment: .leading, spacing: 4) {
                     Text("PAIRING CODE")

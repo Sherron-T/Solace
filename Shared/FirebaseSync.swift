@@ -94,6 +94,7 @@ public final class FirebaseSync: ObservableObject {
     @Published public private(set) var pairCode: String?
     @Published public private(set) var lastSyncedAt: Date?
     @Published public private(set) var networkAvailable = true
+    @Published public private(set) var hasPendingChanges = false
 
     private let defaults = UserDefaults.standard
     private let auth: Auth?
@@ -114,8 +115,10 @@ public final class FirebaseSync: ObservableObject {
         self.role = role
         let defaultsKey = role == .survivor ? "firebase.solace.pairCode" : "firebase.carebridge.pairCode"
         let syncKey = role == .survivor ? "firebase.solace.lastSyncedAt" : "firebase.carebridge.lastSyncedAt"
+        let pendingKey = role == .survivor ? "firebase.solace.hasPendingChanges" : "firebase.carebridge.hasPendingChanges"
         self.pairCode = UserDefaults.standard.string(forKey: defaultsKey)
         self.lastSyncedAt = UserDefaults.standard.object(forKey: syncKey) as? Date
+        self.hasPendingChanges = UserDefaults.standard.bool(forKey: pendingKey)
 
         guard Bundle.main.url(forResource: "GoogleService-Info", withExtension: "plist") != nil else {
             self.auth = nil
@@ -150,9 +153,12 @@ public final class FirebaseSync: ObservableObject {
         networkMonitor.pathUpdateHandler = { [weak self] path in
             Task { @MainActor in
                 guard let self else { return }
+                let wasOffline = !self.networkAvailable
                 self.networkAvailable = path.status == .satisfied
                 if !self.networkAvailable, self.isConfigured {
                     self.state = .offline
+                } else if wasOffline && self.networkAvailable && self.hasPendingChanges {
+                    Task { await self.retryConnection() }
                 }
             }
         }
@@ -273,6 +279,8 @@ public final class FirebaseSync: ObservableObject {
     public func publishCurrentState() async {
         guard let db, let pairCode else { return }
         guard networkAvailable else {
+            hasPendingChanges = true
+            defaults.set(true, forKey: pendingDefaultsKey)
             state = .offline
             return
         }
@@ -298,6 +306,8 @@ public final class FirebaseSync: ObservableObject {
             ], on: reference, merge: true)
             lastSyncedAt = payload.updatedAt
             defaults.set(payload.updatedAt, forKey: lastSyncedDefaultsKey)
+            hasPendingChanges = false
+            defaults.set(false, forKey: pendingDefaultsKey)
             state = .connected
         } catch {
             state = .failed(error.localizedDescription)
@@ -392,6 +402,8 @@ public final class FirebaseSync: ObservableObject {
         lastSyncedAt = payload.updatedAt
         state = .connected
         defaults.set(payload.updatedAt, forKey: lastSyncedDefaultsKey)
+        hasPendingChanges = false
+        defaults.set(false, forKey: pendingDefaultsKey)
         NotificationCenter.default.post(name: .firebaseCareStateDidChange, object: self)
     }
 
@@ -404,6 +416,10 @@ public final class FirebaseSync: ObservableObject {
 
     private var lastSyncedDefaultsKey: String {
         role == .survivor ? "firebase.solace.lastSyncedAt" : "firebase.carebridge.lastSyncedAt"
+    }
+
+    private var pendingDefaultsKey: String {
+        role == .survivor ? "firebase.solace.hasPendingChanges" : "firebase.carebridge.hasPendingChanges"
     }
 
     private func pairReference(_ code: String, db: Firestore) -> DocumentReference {

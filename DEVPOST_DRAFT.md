@@ -57,18 +57,19 @@ The following work was added after August 7 and is the scope I am highlighting f
 - Added an in-app accessibility profile showing the active hand layout, text size, picture cues, voice settings, visual anchor, and system accessibility supports.
 - Added native motion-safe navigation and made screen transitions, button feedback, onboarding transitions, and mood selection respect Reduce Motion.
 - Added Firebase connection status, last-sync visibility, network reachability handling, and reconnect controls while preserving local use when offline.
+- Added pending-change tracking and automatic retry when connectivity returns, so offline edits do not require the survivor to remember to sync them.
 - Added an onboarding recap so survivors can review their selected accommodations before entering the app.
 - Made the Safety screen’s support-request action functional with a ready-to-share message instead of a placeholder button.
 - Added protection against duplicate activity completion from overlapping taps or voice callbacks.
 - Added cancellation protection to the tap-along rehabilitation flow so leaving the screen cannot trigger a delayed completion unexpectedly.
+- Added a user-controlled 30-second rest pause inside activity sessions for fatigue-aware pacing.
 - Improved the browser demo’s accessible motion system and reduced-motion behavior.
 
 ## Next Steps
 
 Future work will focus on expanding recovery support without adding pressure or complexity:
 
-- Add a short, user-controlled rest timer and pacing reminders inside longer activities.
-- Add a queued sync outbox so local changes show exactly what is waiting to upload and retry automatically when connectivity returns.
+- Expand pending sync into a full queued outbox with per-change status and retry history.
 - Add richer caregiver acknowledgements, such as “I saw this” and “I’ll check in,” without turning the app into a messaging inbox.
 - Add a fuller recovery history with filters for mood, energy, activities, and care-plan steps.
 - Continue testing with stroke survivors, care partners, and clinicians to validate language, pacing, and safety workflows.
