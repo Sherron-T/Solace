@@ -6,10 +6,12 @@ import SwiftUI
 /// Targets are ≥96pt and inset from the edges (visual-neglect accommodation).
 struct RehabGameView: View {
     @EnvironmentObject private var model: AppModel
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     @State private var step = 0
     @State private var bursts: [Int] = []      // completed taps, for bloom overlays
     @State private var finished = false
+    @State private var finishTask: Task<Void, Never>?
 
     private let total = 5
     /// Relative positions (x, y) inside the play area — kept inside 0.22…0.78
@@ -61,6 +63,10 @@ struct RehabGameView: View {
         .padding(.bottom, 24)
         .screenEntrance()
         .autoRead(spoken)
+        .onDisappear {
+            finishTask?.cancel()
+            finishTask = nil
+        }
     }
 
     private var progress: some View {
@@ -79,12 +85,14 @@ struct RehabGameView: View {
         Button {
             Haptics.light()
             bursts.append(step)
-            withAnimation(.easeOut(duration: 0.25)) { step += 1 }
+            withAnimation(reduceMotion ? nil : .easeOut(duration: 0.25)) { step += 1 }
             if step == total {
                 finished = true
                 Haptics.success()
                 // A breath to enjoy the bloom, then on to the after-check.
-                DispatchQueue.main.asyncAfter(deadline: .now() + 1.4) {
+                finishTask = Task { @MainActor in
+                    try? await Task.sleep(for: .seconds(1.4))
+                    guard !Task.isCancelled else { return }
                     model.finishActivity()
                 }
             }
@@ -102,7 +110,7 @@ struct RehabGameView: View {
         }
         .buttonStyle(PressableStyle())
         .accessibilityLabel("Tap the leaf. \(step + 1) of \(total).")
-        .transition(.scale.combined(with: .opacity))
+        .transition(reduceMotion ? .opacity : .scale.combined(with: .opacity))
         .id(step)
     }
 }

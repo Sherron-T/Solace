@@ -5,7 +5,7 @@ struct SafetyView: View {
     @Environment(\.openURL) private var openURL
 
     private var spoken: String {
-        "It sounds really hard right now. You don’t have to get through this on your own. Reach a real person, right now. The big button calls the 988 crisis line. Below it, you can message \(model.careTeamName), your care team. Or tap I’m okay to go back."
+        "It sounds really hard right now. You don’t have to get through this on your own. Reach a real person, right now. The big button calls the 988 crisis line. Below it, you can share a support request with \(model.careTeamName), your care team. Or tap I’m okay to go back."
     }
 
     var body: some View {
@@ -52,14 +52,11 @@ struct SafetyView: View {
                 }
                 .accessibilityHint("Calls the 988 Suicide and Crisis Lifeline")
 
-                Button {
-                    // Production: open a thread with the care team.
-                    // Placeholder mirrors the prototype's no-op.
-                } label: {
+                ShareLink(item: supportMessage) {
                     HStack(spacing: 11) {
-                        Image(systemName: "person.fill")
+                        Image(systemName: "message.fill")
                             .font(.system(size: 20, weight: .regular))
-                        Text("Message \(model.careTeamName), my care team")
+                        Text("Share a support request")
                             .font(.ui(17, .bold))
                     }
                     .foregroundStyle(Token.sageText)
@@ -71,6 +68,8 @@ struct SafetyView: View {
                     )
                 }
                 .buttonStyle(PressableStyle())
+                .accessibilityLabel("Share a support request with \(model.careTeamName), my care team")
+                .accessibilityHint("Opens the share sheet with a ready-to-send message.")
 
                 Button { model.goHome() } label: {
                     Text("I’m okay, go back")
@@ -90,6 +89,10 @@ struct SafetyView: View {
         .padding(.bottom, 40)
         .screenEntrance()
         .autoRead(spoken)
+    }
+
+    private var supportMessage: String {
+        "Hi \(model.careTeamName), I’m having a really hard moment and would like some support. Please check in with me when you can."
     }
 }
 

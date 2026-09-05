@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 /// A single day's dot in the 7-day trend chart.
 struct WeekDot: Identifiable {
@@ -99,6 +100,7 @@ final class AppModel: ObservableObject {
     private let store: UserDefaults
     private let publishesSharedState: Bool
     private var firebaseObserver: NSObjectProtocol?
+    private var activityCompletionInFlight = false
 
     init(store: UserDefaults = .standard,
          bridge: CareBridge? = nil,
@@ -320,11 +322,14 @@ final class AppModel: ObservableObject {
 
     func pick(activity id: String) {
         activity = id
+        activityCompletionInFlight = false
         go(.doing)
     }
 
     /// "I did it" — celebrate lightly, then ask how it felt (the BA loop).
     func finishActivity() {
+        guard [.doing, .rehabGame].contains(screen), !activityCompletionInFlight else { return }
+        activityCompletionInFlight = true
         Haptics.success()
         go(.after)
     }
@@ -394,6 +399,7 @@ final class AppModel: ObservableObject {
         if let m = mood { week[6] = m }          // log today's mood
         if plannedActivity == activity { plannedActivity = nil }
         save()
+        activityCompletionInFlight = false
         go(.done)
     }
 
@@ -548,7 +554,11 @@ final class AppModel: ObservableObject {
     }
 
     private func go(_ s: Screen) {
-        withAnimation(.easeOut(duration: 0.38)) { screen = s }
+        if UIAccessibility.isReduceMotionEnabled {
+            screen = s
+        } else {
+            withAnimation(.easeOut(duration: 0.38)) { screen = s }
+        }
     }
 
     // MARK: - Preferences

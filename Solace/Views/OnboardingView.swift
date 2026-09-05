@@ -6,6 +6,7 @@ struct OnboardingView: View {
     @EnvironmentObject private var model: AppModel
     @EnvironmentObject private var narrator: Narrator
     @EnvironmentObject private var handsFree: HandsFreeController
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     @State private var step = 0
     @State private var hand: WorkingHand? = nil
@@ -50,7 +51,7 @@ struct OnboardingView: View {
     private var topBar: some View {
         HStack(spacing: 10) {
             if step > 0 {
-                BackButton { withAnimation { step -= 1 } }
+                BackButton { withAnimation(reduceMotion ? nil : .default) { step -= 1 } }
             } else {
                 Color.clear.frame(width: 48, height: 48)
             }
@@ -211,7 +212,7 @@ struct OnboardingView: View {
 
     private func advance() {
         if step < lastStep {
-            withAnimation { step += 1 }
+            withAnimation(reduceMotion ? nil : .default) { step += 1 }
             // The read-aloud choice takes effect immediately, so the rest of
             // setup already speaks (autoRead only starts after onboarding).
             if readAloud == true {
@@ -233,7 +234,7 @@ struct OnboardingView: View {
 
     private func goBackStep() {
         guard step > 0 else { return }
-        withAnimation { step -= 1 }
+        withAnimation(reduceMotion ? nil : .default) { step -= 1 }
         if readAloud == true {
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.45) {
                 narrator.speak(spoken)

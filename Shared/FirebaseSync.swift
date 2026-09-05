@@ -1,5 +1,6 @@
 import Foundation
 import Combine
+import Network
 import FirebaseCore
 import FirebaseAuth
 import FirebaseFirestore
@@ -21,6 +22,7 @@ public enum FirebaseSyncState: Equatable {
     case signingIn
     case ready
     case connected
+    case offline
     case failed(String)
 
     public var title: String {
@@ -29,6 +31,7 @@ public enum FirebaseSyncState: Equatable {
         case .signingIn: return "Connecting securely…"
         case .ready: return "Ready to connect"
         case .connected: return "Connected to CareBridge"
+        case .offline: return "Offline — saved locally"
         case .failed: return "Connection needs attention"
         }
     }
@@ -39,6 +42,7 @@ public enum FirebaseSyncState: Equatable {
         case .signingIn: return "Signing in anonymously so no password is required."
         case .ready: return "Create or enter a pairing code to link the apps."
         case .connected: return "Updates sync through Firestore and remain available offline."
+        case .offline: return "No internet connection. Your changes stay on this device and can sync when you reconnect."
         case .failed(let message): return message
         }
     }
@@ -89,12 +93,15 @@ public final class FirebaseSync: ObservableObject {
     @Published public private(set) var state: FirebaseSyncState = .notConfigured
     @Published public private(set) var pairCode: String?
     @Published public private(set) var lastSyncedAt: Date?
+    @Published public private(set) var networkAvailable = true
 
     private let defaults = UserDefaults.standard
     private let auth: Auth?
     private let db: Firestore?
     private var stateListener: ListenerRegistration?
     private var pairListener: ListenerRegistration?
+    private let networkMonitor = NWPathMonitor()
+    private let networkQueue = DispatchQueue(label: "com.solace.firebase-network")
 
     private var pairDefaultsKey: String {
         switch role {
@@ -113,12 +120,14 @@ public final class FirebaseSync: ObservableObject {
         guard Bundle.main.url(forResource: "GoogleService-Info", withExtension: "plist") != nil else {
             self.auth = nil
             self.db = nil
+            startNetworkMonitor()
             return
         }
 
         if FirebaseApp.app() == nil { FirebaseApp.configure() }
         self.auth = Auth.auth()
         self.db = Firestore.firestore()
+        startNetworkMonitor()
 
         Task { [weak self] in
             guard let self else { return }
@@ -130,17 +139,35 @@ public final class FirebaseSync: ObservableObject {
     deinit {
         stateListener?.remove()
         pairListener?.remove()
+        networkMonitor.cancel()
     }
 
     public var isConfigured: Bool { auth != nil && db != nil }
     public var statusTitle: String { state.title }
     public var statusDetail: String { state.detail }
 
+    private func startNetworkMonitor() {
+        networkMonitor.pathUpdateHandler = { [weak self] path in
+            Task { @MainActor in
+                guard let self else { return }
+                self.networkAvailable = path.status == .satisfied
+                if !self.networkAvailable, self.isConfigured {
+                    self.state = .offline
+                }
+            }
+        }
+        networkMonitor.start(queue: networkQueue)
+    }
+
     /// Re-establishes authentication/listeners without making the survivor
     /// recreate a pairing code after a temporary network or auth failure.
     public func retryConnection() async {
         guard isConfigured else {
             state = .notConfigured
+            return
+        }
+        guard networkAvailable else {
+            state = .offline
             return
         }
 
@@ -160,6 +187,10 @@ public final class FirebaseSync: ObservableObject {
     public func createPairingCode() async {
         guard let db else {
             state = .notConfigured
+            return
+        }
+        guard networkAvailable else {
+            state = .offline
             return
         }
 
@@ -187,6 +218,10 @@ public final class FirebaseSync: ObservableObject {
     public func connect(code rawCode: String) async {
         guard let db else {
             state = .notConfigured
+            return
+        }
+        guard networkAvailable else {
+            state = .offline
             return
         }
 
@@ -230,13 +265,17 @@ public final class FirebaseSync: ObservableObject {
         stopListeners()
         defaults.removeObject(forKey: pairDefaultsKey)
         pairCode = nil
-        state = isConfigured ? .ready : .notConfigured
+        state = isConfigured ? (networkAvailable ? .ready : .offline) : .notConfigured
     }
 
     /// Push the current local cache. This is intentionally callable by either
     /// app: CareBridge edits (approval and ordering) should travel back to Solace.
     public func publishCurrentState() async {
         guard let db, let pairCode else { return }
+        guard networkAvailable else {
+            state = .offline
+            return
+        }
 
         do {
             _ = try await signInIfNeeded()

@@ -112,6 +112,7 @@ struct FirebaseConnectionCard: View {
     private var iconName: String {
         switch firebase.state {
         case .connected: return "checkmark.icloud.fill"
+        case .offline: return "icloud.slash"
         case .failed: return "exclamationmark.icloud.fill"
         case .signingIn: return "arrow.triangle.2.circlepath.icloud"
         default: return "link"
@@ -120,6 +121,7 @@ struct FirebaseConnectionCard: View {
 
     private var iconColor: Color {
         switch firebase.state {
+        case .offline: return Token.warmBody
         case .failed: return Token.urgent
         case .connected: return Token.primary
         default: return Token.body
