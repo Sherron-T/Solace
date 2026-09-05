@@ -16,6 +16,7 @@ struct SpeakerButton: View {
         }
         .buttonStyle(.plain)
         .accessibilityLabel(narrator.isSpeaking ? "Stop reading aloud" : "Read this screen aloud")
+        .accessibilityHint("Speaks the current screen in a natural voice.")
     }
 }
 
@@ -34,6 +35,64 @@ struct SettingsGearButton: View {
         }
         .buttonStyle(.plain)
         .accessibilityLabel("Accessibility settings")
+        .accessibilityHint("Adjust the layout, text, picture, voice, and visual support options.")
+    }
+}
+
+// MARK: - Accessibility profile summary
+
+/// A plain-language snapshot of the accommodations currently active for the
+/// survivor. Keeping this visible in Settings makes the app's adaptive behavior
+/// discoverable without requiring a person to remember which controls they chose.
+struct AccessibilityProfileCard: View {
+    @EnvironmentObject private var model: AppModel
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.accessibilityDifferentiateWithoutColor) private var differentiateWithoutColor
+
+    private var activeSupports: [String] {
+        var supports = ["\(model.workingHand == .right ? "Right" : "Left")-hand layout",
+                        "\(model.textScale.label.lowercased()) text"]
+        if model.preferPictures { supports.append("picture cues") }
+        if model.autoReadAloud { supports.append("read-aloud screens") }
+        if model.autoVoiceInput { supports.append("hands-free listening") }
+        if model.neglectSide != .none { supports.append("visual anchor") }
+        if reduceMotion { supports.append("reduced motion") }
+        if differentiateWithoutColor { supports.append("non-color cues") }
+        return supports
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(spacing: 10) {
+                Image(systemName: "accessibility")
+                    .font(.system(size: 20, weight: .semibold))
+                    .foregroundStyle(Token.primary)
+                    .frame(width: 42, height: 42)
+                    .background(Token.accentTint, in: Circle())
+                    .accessibilityHidden(true)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Your access profile")
+                        .font(.ui(17, .semibold))
+                        .foregroundStyle(Token.heading2)
+                    Text("These supports are active now")
+                        .font(.ui(13))
+                        .foregroundStyle(Token.muted2)
+                }
+                Spacer(minLength: 0)
+            }
+
+            Text(activeSupports.formatted(.list(type: .and)))
+                .font(.ui(15, .medium))
+                .foregroundStyle(Token.body)
+                .fixedSize(horizontal: false, vertical: true)
+                .accessibilityLabel("Active supports: \(activeSupports.formatted(.list(type: .and)))")
+        }
+        .padding(16)
+        .background(Token.sageCard, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 20, style: .continuous)
+                .strokeBorder(Token.borderSage, lineWidth: 1)
+        )
     }
 }
 

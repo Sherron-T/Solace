@@ -3,6 +3,7 @@ import SwiftUI
 struct MoodView: View {
     @EnvironmentObject private var model: AppModel
     @EnvironmentObject private var handsFree: HandsFreeController
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     private let spoken = "How low or steady do you feel? Tap the one that fits: good, okay, low, hard, or very low. Or tap, say it instead, and speak."
 
@@ -101,8 +102,10 @@ struct MoodView: View {
             )
         }
         .buttonStyle(PressableStyle())
-        .animation(.easeInOut(duration: 0.15), value: selected)
+        .animation(reduceMotion ? nil : .easeInOut(duration: 0.15), value: selected)
         .accessibilityLabel("Feeling \(mood.word)")
+        .accessibilityValue(selected ? "Selected" : "Not selected")
+        .accessibilityHint("Double-tap to choose this feeling.")
         .accessibilityAddTraits(selected ? [.isSelected] : [])
     }
 

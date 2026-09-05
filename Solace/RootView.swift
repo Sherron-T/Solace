@@ -8,6 +8,7 @@ struct RootView: View {
     @EnvironmentObject private var handsFree: HandsFreeController
     @EnvironmentObject private var narrator: Narrator
     @Environment(\.scenePhase) private var scenePhase
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     /// Screens that show the bottom tab bar.
     private var showsTabBar: Bool {
@@ -48,10 +49,20 @@ struct RootView: View {
                 }
                 // Rebuild on screen OR preference change (new type scale / mirror).
                 .id("\(screenID)-\(model.settingsVersion)")
+                .transition(reduceMotion ? .opacity :
+                                .asymmetric(insertion: .move(edge: .trailing).combined(with: .opacity),
+                                            removal: .move(edge: .leading).combined(with: .opacity)))
+                .animation(reduceMotion ? nil : .easeOut(duration: 0.38), value: model.screen)
                 // Visuospatial-neglect anchoring: bright cue on the missed side,
                 // content shifted toward the intact field.
                 .neglectAnchor(model.neglectSide)
             }
+        }
+        // The native app can be animated at the model level, so disable the
+        // container transaction too; this covers screen replacement and the
+        // persistent tab bar when Reduce Motion is enabled.
+        .transaction { transaction in
+            if reduceMotion { transaction.animation = nil }
         }
         // The tab bar lives OUTSIDE the switching subtree, so it stays put
         // (same position, no re-animation) across Home/Activities/Safety.

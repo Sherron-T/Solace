@@ -28,6 +28,9 @@ struct SettingsView: View {
                     SpeakerButton(text: spoken)
                 }
 
+                AccessibilityProfileCard()
+                    .accessibilityElement(children: .contain)
+
                 section("Working hand", "Buttons move to your reachable side") {
                     segmented(["Left", "Right"], selected: model.isRightHanded ? 1 : 0) { i in
                         model.setWorkingHand(i == 0 ? .left : .right)
@@ -201,6 +204,8 @@ struct SettingsView: View {
                         )
                 }
                 .buttonStyle(PressableStyle())
+                .accessibilityLabel(label)
+                .accessibilityValue(i == selected ? "Selected" : "Not selected")
                 .accessibilityAddTraits(i == selected ? [.isSelected] : [])
             }
         }
@@ -222,6 +227,8 @@ struct SettingsView: View {
                         )
                 }
                 .buttonStyle(PressableStyle())
+                .accessibilityLabel(label)
+                .accessibilityValue(value == v ? "Selected" : "Not selected")
                 .accessibilityAddTraits(value == v ? [.isSelected] : [])
             }
         }

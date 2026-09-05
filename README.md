@@ -43,6 +43,14 @@ Built in SwiftUI as two coordinated apps:
 - **Connected when available:** Firebase sync connects the two apps across
   devices, while a local cache keeps the core workflow available offline.
 
+## Native accessibility release
+
+The current native iOS release makes the app's adaptive behavior visible and
+consistent: Settings shows an at-a-glance access profile, screen navigation
+uses calm directional transitions, Reduce Motion disables movement and press
+scaling, and VoiceOver receives explicit state and action descriptions. These
+changes are implemented in the SwiftUI app, not only in the browser demo.
+
 ## Browser demo
 
 For a no-install product tour, open the
