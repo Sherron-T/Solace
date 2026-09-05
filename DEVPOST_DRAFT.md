@@ -17,7 +17,7 @@ Solace is a pair of SwiftUI apps:
 
 The experience supports voice-only interaction, spoken-answer matching, read-aloud support, one-hand mirroring, visual-neglect anchoring, large touch targets, haptics, reduced-motion behavior, and an onboarding recap of the chosen accommodations.
 
-Firebase Authentication and Cloud Firestore connect the two apps across devices. A local cache keeps the core experience available offline, shows the last successful sync, and supports reconnecting without replacing a pairing code.
+Firebase Authentication and Cloud Firestore connect the two apps across devices when configured. A local cache keeps the core experience available offline, shows the last successful sync, and supports reconnecting without replacing a pairing code.
 
 ## How It Was Built
 
@@ -50,6 +50,27 @@ Another challenge was making care-plan drafting useful while keeping the care pa
 
 Solace explores how behavioral science, thoughtful interaction design, and assistive technology can make recovery support feel more human.
 
-## Post–August 7 Native iOS Updates
+## Post–August 7 Updates
 
-The post–August 7 work includes the native accessibility profile and motion-safe navigation release, Firebase sync-status and recovery improvements, the onboarding accessibility recap, the offline/reconnect state, duplicate-completion protection for activity flows, and the functional support-request share action.
+The following work was added after August 7 and is the scope I am highlighting for the eligible update period:
+
+- Added an in-app accessibility profile showing the active hand layout, text size, picture cues, voice settings, visual anchor, and system accessibility supports.
+- Added native motion-safe navigation and made screen transitions, button feedback, onboarding transitions, and mood selection respect Reduce Motion.
+- Added Firebase connection status, last-sync visibility, network reachability handling, and reconnect controls while preserving local use when offline.
+- Added an onboarding recap so survivors can review their selected accommodations before entering the app.
+- Made the Safety screen’s support-request action functional with a ready-to-share message instead of a placeholder button.
+- Added protection against duplicate activity completion from overlapping taps or voice callbacks.
+- Added cancellation protection to the tap-along rehabilitation flow so leaving the screen cannot trigger a delayed completion unexpectedly.
+- Improved the browser demo’s accessible motion system and reduced-motion behavior.
+
+## Next Steps
+
+Future work will focus on expanding recovery support without adding pressure or complexity:
+
+- Add a short, user-controlled rest timer and pacing reminders inside longer activities.
+- Add a queued sync outbox so local changes show exactly what is waiting to upload and retry automatically when connectivity returns.
+- Add richer caregiver acknowledgements, such as “I saw this” and “I’ll check in,” without turning the app into a messaging inbox.
+- Add a fuller recovery history with filters for mood, energy, activities, and care-plan steps.
+- Continue testing with stroke survivors, care partners, and clinicians to validate language, pacing, and safety workflows.
+
+Solace explores how behavioral science, thoughtful interaction design, and assistive technology can make recovery support feel more human.
