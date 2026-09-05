@@ -2,15 +2,24 @@ import SwiftUI
 
 struct HomeView: View {
     @EnvironmentObject private var model: AppModel
+    @EnvironmentObject private var bridge: CareBridge
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var breathe = false
+    @State private var dismissedMessageID: UUID?
 
     private var spoken: String {
         var s = "\(model.greeting). \(model.dateStr). You have a \(model.streakCount) day streak. How are you feeling today? Tap the big check in button in the middle of the screen."
         if let a = model.activity(with: model.plannedActivity) {
             s += " You saved a plan for today: \(a.label)."
         }
+        if let message = latestCaregiverMessage, message.id != dismissedMessageID {
+            s += " New message from your care team: \(message.text)."
+        }
         return s
+    }
+
+    private var latestCaregiverMessage: CaregiverMessage? {
+        bridge.unreadCaregiverMessages.first
     }
 
     var body: some View {
@@ -161,6 +170,9 @@ struct HomeView: View {
             if model.trendDown {
                 trendSupportCard
             }
+            if let message = latestCaregiverMessage, message.id != dismissedMessageID {
+                caregiverMessageCard(message)
+            }
             if let planned = model.activity(with: model.plannedActivity) {
                 plannedCard(planned)
             }
@@ -245,6 +257,67 @@ struct HomeView: View {
         }
         .buttonStyle(PressableStyle())
         .accessibilityLabel("Saved for today: \(activity.label). Tap to start.")
+    }
+
+    /// A calm, one-way inbox for caregiver encouragement. The patient can
+    /// acknowledge it without needing to type or send anything back.
+    private func caregiverMessageCard(_ message: CaregiverMessage) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(spacing: 10) {
+                ZStack {
+                    Circle().fill(Token.sageAvatar).frame(width: 42, height: 42)
+                    Image(systemName: caregiverMessageIcon(message.kind))
+                        .font(.system(size: 18, weight: .medium))
+                        .foregroundStyle(Token.sageDeep)
+                }
+                VStack(alignment: .leading, spacing: 2) {
+                    Eyebrow(text: "From \(model.careTeamName)")
+                    Text("A note for you")
+                        .font(.ui(16, .semibold))
+                        .foregroundStyle(Token.heading2)
+                }
+                Spacer(minLength: 0)
+            }
+
+            Text(message.text)
+                .font(.ui(16))
+                .foregroundStyle(Token.sageText)
+                .lineSpacing(3)
+                .fixedSize(horizontal: false, vertical: true)
+
+            HStack {
+                Text(message.date.formatted(date: .abbreviated, time: .shortened))
+                    .font(.ui(11.5, .medium))
+                    .foregroundStyle(Token.muted2)
+                Spacer()
+                Button("Got it") {
+                    bridge.markCaregiverMessageRead(message)
+                    dismissedMessageID = message.id
+                }
+                .font(.ui(14, .semibold))
+                .foregroundStyle(Token.sageDeep)
+                .padding(.horizontal, 14)
+                .frame(minHeight: 40)
+                .background(Color.white.opacity(0.58), in: Capsule())
+            }
+        }
+        .padding(16)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Token.sageCard, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 22, style: .continuous)
+                .strokeBorder(Token.borderSage, lineWidth: 1.2)
+        )
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Message from \(model.careTeamName): \(message.text)")
+    }
+
+    private func caregiverMessageIcon(_ kind: String) -> String {
+        switch kind {
+        case "checkin": return "questionmark.bubble.fill"
+        case "plan": return "checkmark.seal.fill"
+        default: return "heart.fill"
+        }
     }
 
     /// One-time short lesson (single-session intervention) invitation.

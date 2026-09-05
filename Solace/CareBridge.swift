@@ -10,12 +10,37 @@ import Foundation
 @MainActor
 final class CareBridge: ObservableObject {
     @Published private(set) var feed: [CareUpdate] = []
+    @Published private(set) var caregiverMessages: [CaregiverMessage] = []
+    @Published private(set) var unreadCaregiverMessages: [CaregiverMessage] = []
     private let persistenceEnabled: Bool
+    private let readMessageIDsKey = "solace.readCaregiverMessageIDs"
 
     init(persistenceEnabled: Bool = true, seedIfEmpty: Bool = true) {
         self.persistenceEnabled = persistenceEnabled
         feed = persistenceEnabled ? SharedCareStore.readFeed() : []
+        caregiverMessages = persistenceEnabled ? SharedCareStore.readCaregiverMessages() : []
+        updateUnreadMessages()
         if feed.isEmpty && seedIfEmpty && !SharedCareStore.hasFeed { seed() }
+    }
+
+    /// Refreshes caregiver-authored messages after Firebase or the App Group
+    /// cache receives a new payload.
+    func refreshCaregiverMessages() {
+        guard persistenceEnabled else { return }
+        caregiverMessages = SharedCareStore.readCaregiverMessages()
+        updateUnreadMessages()
+    }
+
+    func markCaregiverMessageRead(_ message: CaregiverMessage) {
+        var ids = Set(UserDefaults.standard.stringArray(forKey: readMessageIDsKey) ?? [])
+        ids.insert(message.id.uuidString)
+        UserDefaults.standard.set(Array(ids), forKey: readMessageIDsKey)
+        updateUnreadMessages()
+    }
+
+    private func updateUnreadMessages() {
+        let readIDs = Set(UserDefaults.standard.stringArray(forKey: readMessageIDsKey) ?? [])
+        unreadCaregiverMessages = caregiverMessages.filter { !readIDs.contains($0.id.uuidString) }
     }
 
     func post(_ text: String, kind: String) {

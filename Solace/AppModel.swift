@@ -130,6 +130,7 @@ final class AppModel: ObservableObject {
         ) { [weak self] _ in
             Task { @MainActor in
                 self?.refreshCarePlanActivities()
+                self?.bridge.refreshCaregiverMessages()
             }
         }
     }
@@ -427,9 +428,11 @@ final class AppModel: ObservableObject {
         store.set(Calendar.current.startOfDay(for: Date()), forKey: Key.lastOpen)
 
         SharedCareStore.writeCarePlanActivities([])
+        SharedCareStore.writeCaregiverMessages([])
         SharedCareStore.clearCuratedActivities()
         SharedCareStore.clearSSIPlan()
         bridge.resetToSeed(patientName: patientName)
+        bridge.refreshCaregiverMessages()
 
         refreshCarePlanActivities()
         save()

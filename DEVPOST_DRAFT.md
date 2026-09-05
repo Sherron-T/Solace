@@ -13,7 +13,7 @@ Solace was inspired by one question: what if support began with one small, manag
 Solace is a pair of SwiftUI apps:
 
 - **Solace** provides accessible daily check-ins, fatigue-aware activity suggestions, values-based behavioral activation, a guided Single-Session Intervention, safety resources, and a one-tap way to share a support request.
-- **SolaceCare** helps care partners view updates, paste physical-therapy notes, create patient-ready steps, approve care-plan activities, and export care summaries.
+- **SolaceCare** helps care partners view updates, paste physical-therapy notes, create patient-ready steps, approve care-plan activities, send short encouragement notes, and export care summaries.
 
 The experience supports voice-only interaction, spoken-answer matching, read-aloud support, one-hand mirroring, visual-neglect anchoring, large touch targets, haptics, reduced-motion behavior, and an onboarding recap of the chosen accommodations.
 
@@ -33,6 +33,7 @@ The project uses:
 - Azure Speech voice options
 - On-device care-plan drafting with an offline fallback
 - Local notifications
+- Caregiver-authored encouragement messages with a local-first patient inbox
 
 Care-plan suggestions require caregiver review and approval before appearing in the survivor’s daily plan. The survivor can also send a ready-to-share support request from the safety screen when reaching out is difficult.
 
@@ -67,6 +68,7 @@ The following work was added after August 7 and is the scope I am highlighting f
 - Added user-controlled weekly recovery goals with non-punitive language and accessible selected states.
 - Added a privacy and sharing explanation in Settings so people can see what stays local and what requires pairing or consent.
 - Added matching sync health, last-sync visibility, offline status, and reconnect controls to the SolaceCare caregiver app.
+- Added a two-way care loop: SolaceCare can send prepared or custom encouragement notes, Solace surfaces them as an accessible patient inbox card, and the patient can acknowledge a note without typing.
 - Improved the browser demo’s accessible motion system and reduced-motion behavior.
 
 ## Next Steps
@@ -74,7 +76,7 @@ The following work was added after August 7 and is the scope I am highlighting f
 Future work will focus on expanding recovery support without adding pressure or complexity:
 
 - Expand pending sync into a full queued outbox with per-change status and retry history.
-- Add richer caregiver acknowledgements, such as “I saw this” and “I’ll check in,” without turning the app into a messaging inbox.
+- Add richer caregiver response states, such as “I saw this” and “I’ll check in,” while keeping the patient inbox intentionally lightweight.
 - Add a fuller recovery history with filters for mood, energy, activities, and care-plan steps.
 - Continue testing with stroke survivors, care partners, and clinicians to validate language, pacing, and safety workflows.
 

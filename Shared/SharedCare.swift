@@ -90,6 +90,24 @@ public struct CareUpdate: Identifiable, Codable {
     }
 }
 
+/// A short, caregiver-authored message that travels back to the survivor.
+/// Messages are deliberately plain text and small so they remain useful when
+/// the shared care payload is cached offline.
+public struct CaregiverMessage: Identifiable, Codable, Equatable {
+    public let id: UUID
+    public let date: Date
+    public let text: String
+    /// "encouragement" | "checkin" | "plan" — drives the patient-side icon.
+    public let kind: String
+
+    public init(text: String, kind: String = "encouragement", date: Date = Date()) {
+        self.id = UUID()
+        self.date = date
+        self.text = text
+        self.kind = kind
+    }
+}
+
 /// Rolled-up patient status for the caregiver dashboard.
 public struct CareSnapshot: Codable {
     public var patientName: String
@@ -206,18 +224,39 @@ public struct FirebaseCarePayload: Codable {
     public var carePlanActivities: [CarePlanActivity]
     public var curatedActivities: [CarePlanActivity]
     public var ssiPlan: SSIPlanSummary?
+    public var caregiverMessages: [CaregiverMessage]
     public var updatedAt: Date
+
+    private enum CodingKeys: String, CodingKey {
+        case snapshot, feed, carePlanActivities, curatedActivities, ssiPlan, caregiverMessages, updatedAt
+    }
 
     public init(snapshot: CareSnapshot?, feed: [CareUpdate],
                 carePlanActivities: [CarePlanActivity],
                 curatedActivities: [CarePlanActivity],
-                ssiPlan: SSIPlanSummary?, updatedAt: Date = Date()) {
+                ssiPlan: SSIPlanSummary?,
+                caregiverMessages: [CaregiverMessage] = [],
+                updatedAt: Date = Date()) {
         self.snapshot = snapshot
         self.feed = feed
         self.carePlanActivities = carePlanActivities
         self.curatedActivities = curatedActivities
         self.ssiPlan = ssiPlan
+        self.caregiverMessages = caregiverMessages
         self.updatedAt = updatedAt
+    }
+
+    /// Older Firebase payloads did not contain messages. Treat that missing
+    /// field as an empty inbox so an upgrade never breaks sync decoding.
+    public init(from decoder: Decoder) throws {
+        let values = try decoder.container(keyedBy: CodingKeys.self)
+        snapshot = try values.decodeIfPresent(CareSnapshot.self, forKey: .snapshot)
+        feed = try values.decodeIfPresent([CareUpdate].self, forKey: .feed) ?? []
+        carePlanActivities = try values.decodeIfPresent([CarePlanActivity].self, forKey: .carePlanActivities) ?? []
+        curatedActivities = try values.decodeIfPresent([CarePlanActivity].self, forKey: .curatedActivities) ?? []
+        ssiPlan = try values.decodeIfPresent(SSIPlanSummary.self, forKey: .ssiPlan)
+        caregiverMessages = try values.decodeIfPresent([CaregiverMessage].self, forKey: .caregiverMessages) ?? []
+        updatedAt = try values.decodeIfPresent(Date.self, forKey: .updatedAt) ?? Date()
     }
 }
 
@@ -261,11 +300,12 @@ public enum SharedCareStore {
     private static let carePlanActivitiesKey = "care.plan.activities"
     private static let ssiPlanKey = "care.ssi.plan"
     private static let curatedKey = "care.curated.activities"
+    private static let caregiverMessagesKey = "care.caregiver.messages"
 
     /// Removes all cross-app demo data. Used by the one-time simulator reset.
     public static func clearAll() {
         let defaults = SharedCare.defaults
-        [feedKey, snapshotKey, carePlanActivitiesKey, ssiPlanKey, curatedKey]
+        [feedKey, snapshotKey, carePlanActivitiesKey, ssiPlanKey, curatedKey, caregiverMessagesKey]
             .forEach { defaults.removeObject(forKey: $0) }
         // Keep an explicit empty feed marker so a normal relaunch does not
         // mistake a deliberate reset for a first launch and reseed history.
@@ -286,6 +326,18 @@ public enum SharedCareStore {
         guard let data = SharedCare.defaults.data(forKey: feedKey),
               let feed = try? JSONDecoder().decode([CareUpdate].self, from: data) else { return [] }
         return feed
+    }
+
+    public static func writeCaregiverMessages(_ messages: [CaregiverMessage]) {
+        if let data = try? JSONEncoder().encode(Array(messages.prefix(20))) {
+            SharedCare.defaults.set(data, forKey: caregiverMessagesKey)
+        }
+    }
+
+    public static func readCaregiverMessages() -> [CaregiverMessage] {
+        guard let data = SharedCare.defaults.data(forKey: caregiverMessagesKey),
+              let messages = try? JSONDecoder().decode([CaregiverMessage].self, from: data) else { return [] }
+        return messages
     }
 
     public static func writeSnapshot(_ snapshot: CareSnapshot) {

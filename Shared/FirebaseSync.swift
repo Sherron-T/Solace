@@ -293,6 +293,7 @@ public final class FirebaseSync: ObservableObject {
                 carePlanActivities: SharedCareStore.readCarePlanActivities(),
                 curatedActivities: SharedCareStore.readCuratedActivities(),
                 ssiPlan: SharedCareStore.readSSIPlan(),
+                caregiverMessages: SharedCareStore.readCaregiverMessages(),
                 updatedAt: Date()
             )
             let data = try JSONEncoder().encode(payload)
@@ -390,6 +391,7 @@ public final class FirebaseSync: ObservableObject {
             } else {
                 SharedCareStore.clearSSIPlan()
             }
+            SharedCareStore.writeCaregiverMessages(payload.caregiverMessages)
         } else {
             SharedCareStore.writeCarePlanActivities(payload.carePlanActivities)
             if payload.curatedActivities.isEmpty {
@@ -397,6 +399,7 @@ public final class FirebaseSync: ObservableObject {
             } else {
                 SharedCareStore.writeCuratedActivities(payload.curatedActivities)
             }
+            SharedCareStore.writeCaregiverMessages(payload.caregiverMessages)
         }
 
         lastSyncedAt = payload.updatedAt

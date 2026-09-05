@@ -11,6 +11,9 @@ struct CareDashboardView: View {
     @State private var feed: [CareUpdate] = []
     @State private var carePlanActivities: [CarePlanActivity] = []
     @State private var ssiPlan: SSIPlanSummary?
+    @State private var caregiverMessages: [CaregiverMessage] = []
+    @State private var responseDraft = ""
+    @State private var responseSent = false
     @State private var noteText: String = ""
     @State private var draftedActivities: [CarePlanActivity] = []
     @State private var isDraftingCarePlan = false
@@ -36,6 +39,7 @@ struct CareDashboardView: View {
                     header
                     FirebaseConnectionCard()
                     statusCard
+                    responseCard
                     weekCard
                     weekSummaryCard
                     if let s = snapshot, s.afterCount > 0 { liftCard(s) }
@@ -68,6 +72,7 @@ struct CareDashboardView: View {
         // existed self-heal here too, not just in the patient app.
         carePlanActivities = SharedCareStore.readCarePlanActivities().map(CarePlanStyle.restyled)
         ssiPlan = SharedCareStore.readSSIPlan()
+        caregiverMessages = SharedCareStore.readCaregiverMessages()
         refreshWeekSummary()
     }
 
@@ -195,6 +200,128 @@ struct CareDashboardView: View {
         let f = RelativeDateTimeFormatter()
         f.unitsStyle = .short
         return "Last update " + f.localizedString(for: first.date, relativeTo: Date())
+    }
+
+    // MARK: Two-way care messages
+
+    private let responseOptions: [(String, String)] = [
+        ("I’m thinking of you", "encouragement"),
+        ("How can I help today?", "checkin"),
+        ("You’re doing enough for today", "encouragement")
+    ]
+
+    private var responseCard: some View {
+        card(background: CareToken.sageCard) {
+            VStack(alignment: .leading, spacing: 11) {
+                HStack(spacing: 8) {
+                    Image(systemName: "arrow.left.arrow.right")
+                        .font(.system(size: 15, weight: .semibold))
+                        .foregroundStyle(CareToken.sageDeep)
+                    Text("SEND A NOTE TO " + name.uppercased())
+                        .font(.system(size: 10.5, weight: .bold))
+                        .tracking(0.8)
+                        .foregroundStyle(CareToken.muted2)
+                }
+                Text("A short message appears in Solace and stays available if either device goes offline.")
+                    .font(.system(size: 12.5))
+                    .foregroundStyle(CareToken.muted)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                ForEach(responseOptions, id: \.0) { option, kind in
+                    Button {
+                        sendCaregiverMessage(option, kind: kind)
+                    } label: {
+                        HStack {
+                            Text(option)
+                                .font(.system(size: 14, weight: .semibold))
+                            Spacer()
+                            Image(systemName: "paperplane.fill")
+                                .font(.system(size: 12, weight: .semibold))
+                        }
+                        .foregroundStyle(CareToken.primary)
+                        .padding(.horizontal, 12)
+                        .frame(minHeight: 42)
+                        .background(Color.white.opacity(0.52), in: RoundedRectangle(cornerRadius: 13, style: .continuous))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 13, style: .continuous)
+                                .strokeBorder(CareToken.border, lineWidth: 1)
+                        )
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("Send: \(option)")
+                }
+
+                HStack(alignment: .bottom, spacing: 8) {
+                    TextField("Write a short note", text: $responseDraft, axis: .vertical)
+                        .font(.system(size: 14))
+                        .lineLimit(2...4)
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 9)
+                        .background(Color.white.opacity(0.72), in: RoundedRectangle(cornerRadius: 13, style: .continuous))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 13, style: .continuous)
+                                .strokeBorder(CareToken.border, lineWidth: 1)
+                        )
+                    Button {
+                        sendCaregiverMessage(responseDraft, kind: "encouragement")
+                    } label: {
+                        Image(systemName: "paperplane.fill")
+                            .font(.system(size: 16, weight: .semibold))
+                            .foregroundStyle(CareToken.onPrimary)
+                            .frame(width: 44, height: 44)
+                            .background(CareToken.primary, in: RoundedRectangle(cornerRadius: 13, style: .continuous))
+                    }
+                    .buttonStyle(.plain)
+                    .disabled(responseDraft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                    .accessibilityLabel("Send written note")
+                }
+
+                if responseSent {
+                    Label("Note saved for delivery", systemImage: "checkmark.circle.fill")
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundStyle(CareToken.sageDeep)
+                        .transition(.opacity)
+                }
+
+                if !caregiverMessages.isEmpty {
+                    Divider().overlay(CareToken.border)
+                    Text("RECENT NOTES")
+                        .font(.system(size: 10, weight: .bold))
+                        .tracking(0.8)
+                        .foregroundStyle(CareToken.muted2)
+                    ForEach(caregiverMessages.prefix(3)) { message in
+                        HStack(alignment: .top, spacing: 8) {
+                            Image(systemName: "checkmark.circle.fill")
+                                .font(.system(size: 12))
+                                .foregroundStyle(CareToken.sage)
+                            Text(message.text)
+                                .font(.system(size: 12.5))
+                                .foregroundStyle(CareToken.body)
+                                .fixedSize(horizontal: false, vertical: true)
+                            Spacer(minLength: 4)
+                            Text(message.date.formatted(date: .omitted, time: .shortened))
+                                .font(.system(size: 10))
+                                .foregroundStyle(CareToken.muted2)
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private func sendCaregiverMessage(_ text: String, kind: String) {
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return }
+        caregiverMessages.insert(CaregiverMessage(text: trimmed, kind: kind), at: 0)
+        caregiverMessages = Array(caregiverMessages.prefix(20))
+        SharedCareStore.writeCaregiverMessages(caregiverMessages)
+        responseDraft = ""
+        withAnimation(.easeOut(duration: 0.2)) { responseSent = true }
+        Task { await FirebaseSync.shared.publishCurrentState() }
+        Task {
+            try? await Task.sleep(for: .seconds(2))
+            await MainActor.run { withAnimation(.easeOut(duration: 0.2)) { responseSent = false } }
+        }
     }
 
     private var digest: String {
