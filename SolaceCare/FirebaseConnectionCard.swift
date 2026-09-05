@@ -6,14 +6,15 @@ struct FirebaseConnectionCard: View {
     @ObservedObject private var firebase = FirebaseSync.shared
     @State private var code = ""
     @State private var isConnecting = false
+    @State private var isRetrying = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 11) {
             HStack(spacing: 8) {
-                Image(systemName: firebase.state == .connected ? "checkmark.icloud.fill" : "link")
+                Image(systemName: iconName)
                     .font(.system(size: 16, weight: .semibold))
                     .foregroundStyle(CareToken.primary)
-                Text(firebase.state == .connected ? "Connected to Solace" : "Connect to Solace")
+                Text(connectionTitle)
                     .font(.system(size: 16, weight: .semibold))
                     .foregroundStyle(CareToken.heading)
                 Spacer()
@@ -22,9 +23,20 @@ struct FirebaseConnectionCard: View {
                 }
             }
 
-            Text(firebase.state == .connected
-                 ? "Live updates are syncing between the two devices."
-                 : "Enter the pairing code shown in the Solace app on the survivor's device.")
+            if let lastSyncedAt = firebase.lastSyncedAt {
+                Label("Last synced \(lastSyncedAt.formatted(date: .abbreviated, time: .shortened))",
+                      systemImage: "clock.arrow.circlepath")
+                    .font(.system(size: 12.5, weight: .medium))
+                    .foregroundStyle(CareToken.muted)
+            }
+
+            if firebase.hasPendingChanges {
+                Label("Changes waiting to sync", systemImage: "arrow.triangle.2.circlepath")
+                    .font(.system(size: 12.5, weight: .medium))
+                    .foregroundStyle(Color(careHex: "8a6c3b"))
+            }
+
+            Text(connectionDetail)
                 .font(.system(size: 12.5))
                 .foregroundStyle(CareToken.muted)
                 .fixedSize(horizontal: false, vertical: true)
@@ -81,6 +93,30 @@ struct FirebaseConnectionCard: View {
                     .foregroundStyle(Color(careHex: "a8543a"))
                     .fixedSize(horizontal: false, vertical: true)
             }
+
+            if firebase.pairCode != nil && firebase.state != .connected {
+                Button {
+                    isRetrying = true
+                    Task {
+                        await firebase.retryConnection()
+                        await MainActor.run { isRetrying = false }
+                    }
+                } label: {
+                    HStack(spacing: 8) {
+                        if isRetrying { ProgressView().tint(CareToken.primary) }
+                        Text("Refresh connection")
+                            .font(.system(size: 13, weight: .semibold))
+                    }
+                    .foregroundStyle(CareToken.primary)
+                    .frame(maxWidth: .infinity, minHeight: 42)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 12, style: .continuous)
+                            .strokeBorder(CareToken.border, lineWidth: 1)
+                    )
+                }
+                .buttonStyle(.plain)
+                .disabled(isRetrying || !firebase.isConfigured)
+            }
         }
         .padding(15)
         .background(CareToken.card, in: RoundedRectangle(cornerRadius: 17, style: .continuous))
@@ -90,6 +126,34 @@ struct FirebaseConnectionCard: View {
         )
         .onAppear {
             if let saved = firebase.pairCode { code = saved }
+        }
+    }
+
+    private var iconName: String {
+        switch firebase.state {
+        case .connected: return "checkmark.icloud.fill"
+        case .offline: return "icloud.slash"
+        case .failed: return "exclamationmark.icloud.fill"
+        case .signingIn: return "arrow.triangle.2.circlepath.icloud"
+        default: return "link"
+        }
+    }
+
+    private var connectionTitle: String {
+        switch firebase.state {
+        case .connected: return "Connected to Solace"
+        case .offline: return "Offline — saved locally"
+        case .failed: return "Connection needs attention"
+        default: return "Connect to Solace"
+        }
+    }
+
+    private var connectionDetail: String {
+        switch firebase.state {
+        case .connected: return "Live updates are syncing between the two devices."
+        case .offline: return "No internet connection. Local care notes remain available and will sync when you reconnect."
+        case .failed(let message): return message
+        default: return "Enter the pairing code shown in the Solace app on the survivor's device."
         }
     }
 }

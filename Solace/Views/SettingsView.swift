@@ -103,7 +103,38 @@ struct SettingsView: View {
                     }
                 }
 
+                section("A gentle weekly goal", "Choose a pace that feels doable. Missing a day never counts against you.") {
+                    HStack(spacing: 6) {
+                        ForEach([3, 6, 10], id: \.self) { goal in
+                            Button {
+                                model.setWeeklyGoal(goal)
+                            } label: {
+                                VStack(spacing: 2) {
+                                    Text("\(goal)")
+                                        .font(.display(22, .medium))
+                                    Text(goal == 1 ? "thing" : "things")
+                                        .font(.ui(11, .semibold))
+                                }
+                                .foregroundStyle(model.weeklyGoal == goal ? Token.onPrimary : Token.body)
+                                .frame(maxWidth: .infinity, minHeight: 55)
+                                .background(model.weeklyGoal == goal ? Token.primary : Token.cardSurface,
+                                            in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 14, style: .continuous)
+                                        .strokeBorder(model.weeklyGoal == goal ? .clear : Token.borderCard, lineWidth: 1)
+                                )
+                            }
+                            .buttonStyle(PressableStyle())
+                            .accessibilityLabel("Weekly goal: \(goal) \(goal == 1 ? "thing" : "things")")
+                            .accessibilityValue(model.weeklyGoal == goal ? "Selected" : "Not selected")
+                            .accessibilityAddTraits(model.weeklyGoal == goal ? [.isSelected] : [])
+                        }
+                    }
+                }
+
                 FirebaseConnectionCard()
+
+                PrivacySharingCard()
 
                 section("One gentle reminder a day", "Never a guilt trip, and skipped days are never mentioned.") {
                     toggle(model.reminderOn) { model.setReminder($0) }

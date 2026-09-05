@@ -584,6 +584,10 @@ final class AppModel: ObservableObject {
     func setAutoReadAloud(_ v: Bool) { autoReadAloud = v; bumpSettings(); save() }
     func setAutoVoiceInput(_ v: Bool) { autoVoiceInput = v; save() }
     func setNeglectSide(_ s: NeglectSide) { neglectSide = s; bumpSettings(); save() }
+    func setWeeklyGoal(_ goal: Int) {
+        weeklyGoal = min(max(goal, 1), 14)
+        save()
+    }
 
     func replayOnboarding() {
         didOnboard = false

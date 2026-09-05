@@ -154,6 +154,46 @@ struct AccessibilityProfileCard: View {
     }
 }
 
+// MARK: - Privacy and sharing explanation
+
+/// Makes the data boundary legible at the moment a person is choosing whether
+/// to connect CareBridge. This is intentionally explanatory, not a legal notice.
+struct PrivacySharingCard: View {
+    var body: some View {
+        VStack(alignment: .leading, spacing: 11) {
+            Label("Your data, your choice", systemImage: "lock.shield.fill")
+                .font(.ui(17, .semibold))
+                .foregroundStyle(Token.heading2)
+
+            privacyRow("iphone.gen3", "Core check-ins stay on this device first")
+            privacyRow("person.2.fill", "CareBridge receives updates only after pairing")
+            privacyRow("checkmark.circle.fill", "Your One Small Plan is shared only when you choose")
+            privacyRow("icloud.and.arrow.down.fill", "A local cache keeps the app usable offline")
+        }
+        .padding(16)
+        .background(Token.cardSurface, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 20, style: .continuous)
+                .strokeBorder(Token.borderCard, lineWidth: 1)
+        )
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Your data, your choice. Core check-ins stay on this device first. CareBridge receives updates only after pairing. Your One Small Plan is shared only when you choose. A local cache keeps the app usable offline.")
+    }
+
+    private func privacyRow(_ symbol: String, _ text: String) -> some View {
+        HStack(alignment: .top, spacing: 9) {
+            Image(systemName: symbol)
+                .font(.system(size: 14, weight: .semibold))
+                .foregroundStyle(Token.sage)
+                .frame(width: 19)
+            Text(text)
+                .font(.ui(13.5))
+                .foregroundStyle(Token.body)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+    }
+}
+
 // MARK: - Handedness-aware screen header
 //
 // The interactive chrome (back, speaker) sits on the user's working-hand side so a

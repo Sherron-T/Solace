@@ -5,7 +5,7 @@ struct SafetyView: View {
     @Environment(\.openURL) private var openURL
 
     private var spoken: String {
-        "It sounds really hard right now. You don’t have to get through this on your own. Reach a real person, right now. The big button calls the 988 crisis line. Below it, you can share a support request with \(model.careTeamName), your care team. Or tap I’m okay to go back."
+        "It sounds really hard right now. You don’t have to get through this on your own. If you have sudden new stroke symptoms, call 911 now. The next button calls the 988 crisis line. Below it, you can share a support request with \(model.careTeamName), your care team. Or tap I’m okay to go back."
     }
 
     var body: some View {
@@ -39,6 +39,8 @@ struct SafetyView: View {
                     .padding(.top, 12)
             }
             .padding(.bottom, 30)
+
+            emergencyCard
 
             VStack(spacing: 13) {
                 FilledCTA(
@@ -93,6 +95,41 @@ struct SafetyView: View {
 
     private var supportMessage: String {
         "Hi \(model.careTeamName), I’m having a really hard moment and would like some support. Please check in with me when you can."
+    }
+
+    private var emergencyCard: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(spacing: 9) {
+                Image(systemName: "exclamationmark.triangle.fill")
+                    .font(.system(size: 17, weight: .semibold))
+                    .foregroundStyle(Token.urgent)
+                Text("New stroke symptoms?")
+                    .font(.ui(16, .semibold))
+                    .foregroundStyle(Token.heading2)
+            }
+            Text("Sudden face drooping, arm weakness, speech trouble, or a severe new headache needs emergency help.")
+                .font(.ui(13.5))
+                .foregroundStyle(Token.warmBody)
+                .fixedSize(horizontal: false, vertical: true)
+            Button {
+                if let url = URL(string: "tel:911") { openURL(url) }
+            } label: {
+                Label("Call 911", systemImage: "phone.fill")
+                    .font(.ui(15, .bold))
+                    .foregroundStyle(Token.onPrimary)
+                    .frame(maxWidth: .infinity, minHeight: 48)
+                    .background(Token.urgent, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+            }
+            .buttonStyle(PressableStyle())
+            .accessibilityHint("Calls emergency services. Do not wait for the app if you think you may be having a stroke.")
+        }
+        .padding(16)
+        .background(Token.warmAlertCard, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .strokeBorder(Token.borderWarm, lineWidth: 1)
+        )
+        .accessibilityElement(children: .contain)
     }
 }
 

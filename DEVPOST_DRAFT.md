@@ -63,6 +63,10 @@ The following work was added after August 7 and is the scope I am highlighting f
 - Added protection against duplicate activity completion from overlapping taps or voice callbacks.
 - Added cancellation protection to the tap-along rehabilitation flow so leaving the screen cannot trigger a delayed completion unexpectedly.
 - Added a user-controlled 30-second rest pause inside activity sessions for fatigue-aware pacing.
+- Added an urgent stroke-symptom pathway with a direct 911 action, clearly separated from the 988 emotional-crisis pathway.
+- Added user-controlled weekly recovery goals with non-punitive language and accessible selected states.
+- Added a privacy and sharing explanation in Settings so people can see what stays local and what requires pairing or consent.
+- Added matching sync health, last-sync visibility, offline status, and reconnect controls to the SolaceCare caregiver app.
 - Improved the browser demo’s accessible motion system and reduced-motion behavior.
 
 ## Next Steps
