@@ -138,7 +138,34 @@ struct OnboardingView: View {
                    subtitle: "A balance of both", selected: pictures == false) { pictures = false }
             choice(icon: "face.smiling", title: "More pictures",
                    subtitle: "Show feelings as faces", selected: pictures == true) { pictures = true }
+            setupSummary
         }
+    }
+
+    private var setupSummary: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("Your Solace setup")
+                .font(.ui(16, .semibold))
+                .foregroundStyle(Token.heading2)
+            Text("\(hand == .right ? "Right" : "Left")-hand layout · \(textScale.label.lowercased()) text")
+                .font(.ui(14))
+                .foregroundStyle(Token.body)
+            Text("\(readAloud == true ? "Read-aloud on" : "Read-aloud off") · \(autoVoice == true ? "Hands-free listening on" : "Tap-to-answer")")
+                .font(.ui(14))
+                .foregroundStyle(Token.body)
+            Text(neglect == .none ? "No visual anchor" : "\(neglect == .left ? "Left" : "Right") visual anchor")
+                .font(.ui(14))
+                .foregroundStyle(Token.body)
+        }
+        .padding(16)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Token.sageCard, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .strokeBorder(Token.borderSage, lineWidth: 1)
+        )
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Your Solace setup: \(hand == .right ? "right" : "left") hand, \(textScale.label.lowercased()) text, \(readAloud == true ? "read aloud on" : "read aloud off"), \(autoVoice == true ? "hands-free listening on" : "tap to answer"), \(neglect == .none ? "no visual anchor" : "visual anchor on the \(neglect == .left ? "left" : "right")")")
     }
 
     // MARK: Footer CTA

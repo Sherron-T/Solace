@@ -5,24 +5,35 @@ import SwiftUI
 struct FirebaseConnectionCard: View {
     @ObservedObject private var firebase = FirebaseSync.shared
     @State private var isCreating = false
+    @State private var isRetrying = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack(spacing: 9) {
-                Image(systemName: firebase.state == .connected ? "checkmark.icloud.fill" : "link")
+                Image(systemName: iconName)
                     .font(.system(size: 17, weight: .semibold))
-                    .foregroundStyle(Token.primary)
+                    .foregroundStyle(iconColor)
                 Text("Connect CareBridge")
                     .font(.ui(17, .semibold))
                     .foregroundStyle(Token.heading2)
+                Spacer(minLength: 0)
+                Text(firebase.statusTitle)
+                    .font(.ui(11, .semibold))
+                    .foregroundStyle(iconColor)
+                    .multilineTextAlignment(.trailing)
             }
 
-            Text(firebase.state == .connected
-                 ? "CareBridge is connected on another device. Updates will sync automatically."
-                 : "Create a code for the caregiver app. Your data stays on this device until you choose to connect.")
+            Text(firebase.statusDetail)
                 .font(.ui(13))
                 .foregroundStyle(Token.muted2)
                 .fixedSize(horizontal: false, vertical: true)
+
+            if let lastSyncedAt = firebase.lastSyncedAt {
+                Label("Last synced \(lastSyncedAt.formatted(date: .abbreviated, time: .shortened))",
+                      systemImage: "clock.arrow.circlepath")
+                    .font(.ui(12.5, .medium))
+                    .foregroundStyle(Token.muted)
+            }
 
             if let code = firebase.pairCode {
                 VStack(alignment: .leading, spacing: 4) {
@@ -63,6 +74,31 @@ struct FirebaseConnectionCard: View {
             }
             .buttonStyle(PressableStyle())
             .disabled(isCreating || !firebase.isConfigured)
+
+            if firebase.pairCode != nil {
+                Button {
+                    isRetrying = true
+                    Task {
+                        await firebase.retryConnection()
+                        await MainActor.run { isRetrying = false }
+                    }
+                } label: {
+                    HStack(spacing: 8) {
+                        if isRetrying { ProgressView().tint(Token.body) }
+                        Text("Refresh connection")
+                            .font(.ui(14, .semibold))
+                    }
+                    .foregroundStyle(Token.body)
+                    .frame(maxWidth: .infinity, minHeight: 42)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 13, style: .continuous)
+                            .strokeBorder(Token.borderOutline, lineWidth: 1)
+                    )
+                }
+                .buttonStyle(PressableStyle())
+                .disabled(isRetrying || !firebase.isConfigured)
+                .accessibilityHint("Reconnects without changing the pairing code.")
+            }
         }
         .padding(16)
         .background(Token.cardSurface, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
@@ -70,5 +106,23 @@ struct FirebaseConnectionCard: View {
             RoundedRectangle(cornerRadius: 18, style: .continuous)
                 .strokeBorder(Token.borderCard, lineWidth: 1)
         )
+        .accessibilityElement(children: .contain)
+    }
+
+    private var iconName: String {
+        switch firebase.state {
+        case .connected: return "checkmark.icloud.fill"
+        case .failed: return "exclamationmark.icloud.fill"
+        case .signingIn: return "arrow.triangle.2.circlepath.icloud"
+        default: return "link"
+        }
+    }
+
+    private var iconColor: Color {
+        switch firebase.state {
+        case .failed: return Token.urgent
+        case .connected: return Token.primary
+        default: return Token.body
+        }
     }
 }

@@ -105,9 +105,10 @@ public final class FirebaseSync: ObservableObject {
 
     public init(role: FirebaseSyncRole) {
         self.role = role
-        self.pairCode = UserDefaults.standard.string(forKey: role == .survivor
-                                                      ? "firebase.solace.pairCode"
-                                                      : "firebase.carebridge.pairCode")
+        let defaultsKey = role == .survivor ? "firebase.solace.pairCode" : "firebase.carebridge.pairCode"
+        let syncKey = role == .survivor ? "firebase.solace.lastSyncedAt" : "firebase.carebridge.lastSyncedAt"
+        self.pairCode = UserDefaults.standard.string(forKey: defaultsKey)
+        self.lastSyncedAt = UserDefaults.standard.object(forKey: syncKey) as? Date
 
         guard Bundle.main.url(forResource: "GoogleService-Info", withExtension: "plist") != nil else {
             self.auth = nil
@@ -134,6 +135,27 @@ public final class FirebaseSync: ObservableObject {
     public var isConfigured: Bool { auth != nil && db != nil }
     public var statusTitle: String { state.title }
     public var statusDetail: String { state.detail }
+
+    /// Re-establishes authentication/listeners without making the survivor
+    /// recreate a pairing code after a temporary network or auth failure.
+    public func retryConnection() async {
+        guard isConfigured else {
+            state = .notConfigured
+            return
+        }
+
+        do {
+            _ = try await signInIfNeeded()
+            if pairCode == nil {
+                state = .ready
+            } else {
+                startListeners()
+                await publishCurrentState()
+            }
+        } catch {
+            state = .failed(error.localizedDescription)
+        }
+    }
 
     public func createPairingCode() async {
         guard let db else {
@@ -236,6 +258,7 @@ public final class FirebaseSync: ObservableObject {
                 "updatedAt": Timestamp(date: payload.updatedAt)
             ], on: reference, merge: true)
             lastSyncedAt = payload.updatedAt
+            defaults.set(payload.updatedAt, forKey: lastSyncedDefaultsKey)
             state = .connected
         } catch {
             state = .failed(error.localizedDescription)
@@ -329,6 +352,7 @@ public final class FirebaseSync: ObservableObject {
 
         lastSyncedAt = payload.updatedAt
         state = .connected
+        defaults.set(payload.updatedAt, forKey: lastSyncedDefaultsKey)
         NotificationCenter.default.post(name: .firebaseCareStateDidChange, object: self)
     }
 
@@ -337,6 +361,10 @@ public final class FirebaseSync: ObservableObject {
         pairListener?.remove()
         stateListener = nil
         pairListener = nil
+    }
+
+    private var lastSyncedDefaultsKey: String {
+        role == .survivor ? "firebase.solace.lastSyncedAt" : "firebase.carebridge.lastSyncedAt"
     }
 
     private func pairReference(_ code: String, db: Firestore) -> DocumentReference {
